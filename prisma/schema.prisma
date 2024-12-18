@@ -25,6 +25,7 @@ model User {
   roles       Role[]
   sessions    Session[]
   connections Connection[]
+  focusSessions FocusSession[]
 }
 
 model Note {
@@ -166,4 +167,19 @@ model Connection {
   userId String
 
   @@unique([providerName, providerId])
+}
+
+model FocusSession {
+  id        String   @id @default(cuid())
+  startTime DateTime @default(now())
+  duration  Int      @default(1500) // 25 minutes in seconds
+  completed Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId String
+
+  @@index([userId])
 }

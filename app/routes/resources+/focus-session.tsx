@@ -1,0 +1,86 @@
+import {
+	type LoaderFunctionArgs,
+	type ActionFunctionArgs,
+} from '@remix-run/node'
+import { requireUserId } from '#app/utils/auth.server'
+import { prisma } from '#app/utils/db.server'
+
+export async function loader({ request }: LoaderFunctionArgs) {
+	const userId = await requireUserId(request)
+	const activeSession = await prisma.focusSession.findFirst({
+		where: {
+			userId,
+			completed: false,
+		},
+		orderBy: { startTime: 'desc' },
+	})
+
+	return Response.json({ activeSession })
+}
+
+export async function action({ request }: ActionFunctionArgs) {
+	const userId = await requireUserId(request)
+	const formData = await request.formData()
+	const intent = formData.get('intent')
+
+	switch (intent) {
+		case 'start': {
+			const duration = Number(formData.get('duration'))
+			const session = await prisma.focusSession.create({
+				data: {
+					userId,
+					duration,
+				},
+			})
+			return Response.json({ activeSession: session })
+		}
+		case 'stop': {
+			const session = await prisma.focusSession.findFirst({
+				where: { userId, completed: false },
+				select: { id: true },
+			})
+
+			if (!session) {
+				return Response.json({ error: 'No active session' }, { status: 400 })
+			}
+
+			return Response.json(
+				await prisma.focusSession.delete({
+					where: { id: session.id },
+				}),
+			)
+		}
+		case 'complete': {
+			const session = await prisma.focusSession.findFirst({
+				where: { userId, completed: false },
+				select: { id: true, startTime: true, duration: true },
+			})
+
+			if (!session) {
+				return Response.json({ error: 'No active session' }, { status: 400 })
+			}
+
+			if (intent === 'complete') {
+				const elapsedSeconds = Math.floor(
+					(Date.now() - session.startTime.getTime()) / 1000,
+				)
+				if (elapsedSeconds < session.duration) {
+					return Response.json(
+						{ error: 'Session duration not reached' },
+						{ status: 400 },
+					)
+				}
+			}
+
+			return Response.json(
+				await prisma.focusSession.update({
+					where: { id: session.id },
+					data: { completed: true },
+				}),
+			)
+		}
+		default: {
+			return Response.json({ error: 'Invalid intent' }, { status: 400 })
+		}
+	}
+}
