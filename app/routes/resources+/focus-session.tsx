@@ -1,6 +1,7 @@
 import {
 	type LoaderFunctionArgs,
 	type ActionFunctionArgs,
+	json,
 } from '@remix-run/node'
 import { requireUserId } from '#app/utils/auth.server'
 import { prisma } from '#app/utils/db.server'
@@ -41,14 +42,14 @@ export async function action({ request }: ActionFunctionArgs) {
 			})
 
 			if (!session) {
-				return Response.json({ error: 'No active session' }, { status: 400 })
+				return json({ error: 'No active session' }, { status: 400 })
 			}
 
-			return Response.json(
-				await prisma.focusSession.delete({
-					where: { id: session.id },
-				}),
-			)
+			await prisma.focusSession.delete({
+				where: { id: session.id },
+			})
+
+			return json({ activeSession: null })
 		}
 		case 'complete': {
 			const session = await prisma.focusSession.findFirst({
