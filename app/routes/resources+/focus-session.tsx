@@ -16,7 +16,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		orderBy: { startTime: 'desc' },
 	})
 
-	return Response.json({ activeSession })
+	return json({ activeSession })
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -33,7 +33,7 @@ export async function action({ request }: ActionFunctionArgs) {
 					duration,
 				},
 			})
-			return Response.json({ activeSession: session })
+			return json({ activeSession: session })
 		}
 		case 'stop': {
 			const session = await prisma.focusSession.findFirst({
@@ -58,7 +58,7 @@ export async function action({ request }: ActionFunctionArgs) {
 			})
 
 			if (!session) {
-				return Response.json({ error: 'No active session' }, { status: 400 })
+				return json({ error: 'No active session' }, { status: 400 })
 			}
 
 			if (intent === 'complete') {
@@ -66,14 +66,14 @@ export async function action({ request }: ActionFunctionArgs) {
 					(Date.now() - session.startTime.getTime()) / 1000,
 				)
 				if (elapsedSeconds < session.duration) {
-					return Response.json(
+					return json(
 						{ error: 'Session duration not reached' },
 						{ status: 400 },
 					)
 				}
 			}
 
-			return Response.json(
+			return json(
 				await prisma.focusSession.update({
 					where: { id: session.id },
 					data: { completed: true },
@@ -81,7 +81,7 @@ export async function action({ request }: ActionFunctionArgs) {
 			)
 		}
 		default: {
-			return Response.json({ error: 'Invalid intent' }, { status: 400 })
+			return json({ error: 'Invalid intent' }, { status: 400 })
 		}
 	}
 }
