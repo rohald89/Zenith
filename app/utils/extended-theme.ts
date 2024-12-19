@@ -44,6 +44,10 @@ export const extendedTheme = {
 			DEFAULT: 'hsl(var(--card))',
 			foreground: 'hsl(var(--card-foreground))',
 		},
+		sidebar: {
+			DEFAULT: 'hsl(var(--sidebar-background))',
+			foreground: 'hsl(var(--sidebar-foreground))',
+		},
 	},
 	borderColor: {
 		DEFAULT: 'hsl(var(--border))',

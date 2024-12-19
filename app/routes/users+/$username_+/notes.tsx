@@ -33,9 +33,9 @@ export default function NotesRoute() {
 		'line-clamp-2 block rounded-l-full py-2 pl-8 pr-6 text-base lg:text-xl'
 	return (
 		<main className="container flex h-full min-h-[400px] px-0 pb-12 md:px-8">
-			<div className="grid w-full grid-cols-4 bg-muted pl-2 md:container md:rounded-3xl md:pr-0">
-				<div className="relative col-span-1">
-					<div className="absolute inset-0 flex flex-col">
+			<div className="grid h-full w-full grid-cols-4 bg-muted pl-2 md:container md:rounded-3xl md:pr-0">
+				<div className="col-span-1">
+					<div className="flex h-full flex-col">
 						<Link
 							to={`/users/${data.owner.username}`}
 							className="flex flex-col items-center justify-center gap-2 bg-muted pb-4 pl-8 pr-4 pt-12 lg:flex-row lg:justify-start lg:gap-4"
