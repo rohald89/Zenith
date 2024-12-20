@@ -25,7 +25,9 @@ model User {
   roles       Role[]
   sessions    Session[]
   connections Connection[]
+
   focusSessions FocusSession[]
+  userItems UserItem[]
 }
 
 model Note {
@@ -182,4 +184,79 @@ model FocusSession {
   userId String
 
   @@index([userId])
+}
+
+model Theme {
+    id String @id @default(cuid())
+    name String
+    description String
+    isActive Boolean @default(false)
+
+    themeCategories ThemeCategory[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model ThemeCategory {
+    id String @id @default(cuid())
+    name String
+    description String
+
+    theme Theme @relation(fields: [themeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    themeId String
+
+    items Item[]
+
+    @@unique([themeId, name])
+    @@index([themeId])
+}
+
+model Item {
+    id String @id @default(cuid())
+    name String
+    description String
+    rarity String
+    droprate Int
+
+    themeCategory ThemeCategory @relation(fields: [themeCategoryId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    themeCategoryId String
+
+    images ItemImage[]
+    userItems UserItem[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([themeCategoryId, name])
+    @@index([themeCategoryId])
+}
+
+model ItemImage {
+  id          String  @id @default(cuid())
+  altText     String?
+  contentType String
+  blob        Bytes
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+
+  item   Item   @relation(fields: [itemId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  itemId String
+}
+
+model UserItem {
+    id String @id @default(cuid())
+    quantity Int @default(1)
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    userId String
+    item Item @relation(fields: [itemId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    itemId String
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([userId, itemId])
 }
