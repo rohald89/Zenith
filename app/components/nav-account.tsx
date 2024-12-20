@@ -23,10 +23,10 @@ import {
   useSidebar,
 } from "#app/components/ui/sidebar"
 
-export function NavProjects({
-  projects,
+export function NavAccount({
+  account,
 }: {
-  projects: {
+  account: {
     name: string
     url: string
     icon: LucideIcon
@@ -36,9 +36,9 @@ export function NavProjects({
 
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-      <SidebarGroupLabel>Projects</SidebarGroupLabel>
+      <SidebarGroupLabel>Account</SidebarGroupLabel>
       <SidebarMenu>
-        {projects.map((item) => (
+        {account.map((item) => (
           <SidebarMenuItem key={item.name}>
             <SidebarMenuButton asChild>
               <a href={item.url}>

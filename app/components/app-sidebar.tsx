@@ -1,19 +1,22 @@
-import * as React from 'react'
 import {
 	AudioWaveform,
+	BellDot,
 	BookOpen,
 	Bot,
+	Clock,
 	Command,
 	Frame,
 	GalleryVerticalEnd,
 	Map,
 	PieChart,
+	Receipt,
 	Settings2,
 	SquareTerminal,
+	User,
 } from 'lucide-react'
 
+import { NavAccount } from '#app/components/nav-account'
 import { NavMain } from '#app/components/nav-main'
-import { NavProjects } from '#app/components/nav-projects'
 import { NavUser } from '#app/components/nav-user'
 import { TeamSwitcher } from '#app/components/team-switcher'
 import {
@@ -26,11 +29,6 @@ import {
 
 // This is sample data.
 const data = {
-	user: {
-		name: 'shadcn',
-		email: 'm@example.com',
-		avatar: '/avatars/shadcn.jpg',
-	},
 	teams: [
 		{
 			name: 'Acme Inc',
@@ -135,21 +133,26 @@ const data = {
 			],
 		},
 	],
-	projects: [
+	account: [
 		{
-			name: 'Design Engineering',
-			url: '#',
-			icon: Frame,
+			name: 'Account',
+			url: '/dashboard',
+			icon: User,
 		},
 		{
-			name: 'Sales & Marketing',
-			url: '#',
-			icon: PieChart,
+			name: 'Billing',
+			url: '/dashboard/billing',
+			icon: Receipt,
 		},
 		{
-			name: 'Travel',
-			url: '#',
-			icon: Map,
+			name: 'Notifications',
+			url: '/dashboard/notifications',
+			icon: BellDot,
+		},
+		{
+			name: 'Activities',
+			url: '/dashboard/activities',
+			icon: Clock,
 		},
 	],
 }
@@ -162,7 +165,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 			</SidebarHeader>
 			<SidebarContent>
 				<NavMain items={data.navMain} />
-				<NavProjects projects={data.projects} />
+				<NavAccount account={data.account} />
 			</SidebarContent>
 			<SidebarFooter>
 				<NavUser />
