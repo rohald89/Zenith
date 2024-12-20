@@ -56,7 +56,7 @@ export default function DashboardLayout() {
 									</BreadcrumbLink>
 								</BreadcrumbItem>
 								{breadcrumbs.map((breadcrumb, i) => (
-									<>
+									<div className="flex items-center gap-2" key={i}>
 										<BreadcrumbSeparator />
 										<BreadcrumbItem key={breadcrumb.path}>
 											{i === breadcrumbs.length - 1 ? (
@@ -67,7 +67,7 @@ export default function DashboardLayout() {
 												</BreadcrumbLink>
 											)}
 										</BreadcrumbItem>
-									</>
+									</div>
 								))}
 							</BreadcrumbList>
 						</Breadcrumb>

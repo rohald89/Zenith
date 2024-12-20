@@ -5,14 +5,13 @@ import {
 	Bot,
 	Clock,
 	Command,
-	Frame,
 	GalleryVerticalEnd,
-	Map,
-	PieChart,
+	Palette,
 	Receipt,
 	Settings2,
 	SquareTerminal,
 	User,
+	Users,
 } from 'lucide-react'
 
 import { NavAccount } from '#app/components/nav-account'
@@ -26,6 +25,7 @@ import {
 	SidebarHeader,
 	SidebarRail,
 } from '#app/components/ui/sidebar'
+import { NavAdmin } from './nav-admin'
 
 // This is sample data.
 const data = {
@@ -155,6 +155,18 @@ const data = {
 			icon: Clock,
 		},
 	],
+	navAdmin: [
+		{
+			name: 'Users',
+			url: '/dashboard/users',
+			icon: Users,
+		},
+		{
+			name: 'Themes',
+			url: '/dashboard/themes',
+			icon: Palette,
+		},
+	],
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -166,6 +178,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 			<SidebarContent>
 				<NavMain items={data.navMain} />
 				<NavAccount account={data.account} />
+				<NavAdmin items={data.navAdmin} />
 			</SidebarContent>
 			<SidebarFooter>
 				<NavUser />
