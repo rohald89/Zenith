@@ -28,6 +28,11 @@ model User {
 
   focusSessions FocusSession[]
   userItems UserItem[]
+
+  preferredTheme Theme? @relation("UserPreferredTheme", fields: [preferredThemeId], references: [id])
+  preferredThemeId String?
+
+  @@index([preferredThemeId])
 }
 
 model Note {
@@ -196,6 +201,8 @@ model Theme {
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
+
+    preferredByUsers User[] @relation("UserPreferredTheme")
 }
 
 model ThemeCategory {

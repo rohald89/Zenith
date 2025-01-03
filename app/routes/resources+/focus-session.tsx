@@ -24,6 +24,56 @@ export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData()
 	const intent = formData.get('intent')
 
+	if (intent === 'complete') {
+		const user = await prisma.user.findUnique({
+			where: { id: userId },
+			select: { preferredThemeId: true },
+		})
+
+		const themeId = user?.preferredThemeId ?? (await getRandomActiveThemeId())
+
+		const category = await prisma.themeCategory.findFirst({
+			where: { themeId },
+			include: { items: true },
+		})
+
+		if (category?.items.length) {
+			const randomItem =
+				category.items[Math.floor(Math.random() * category.items.length)]
+
+			await prisma.userItem.upsert({
+				where: {
+					userId_itemId: {
+						userId,
+						itemId: randomItem.id,
+					},
+				},
+				create: {
+					userId,
+					itemId: randomItem.id,
+					quantity: 1,
+				},
+				update: {
+					quantity: {
+						increment: 1,
+					},
+				},
+			})
+		}
+
+		// Complete the session
+		const session = await prisma.focusSession.findFirst({
+			where: { userId, completed: false },
+		})
+
+		if (session) {
+			await prisma.focusSession.update({
+				where: { id: session.id },
+				data: { completed: true },
+			})
+		}
+	}
+
 	switch (intent) {
 		case 'start': {
 			const duration = Number(formData.get('duration'))
@@ -84,4 +134,13 @@ export async function action({ request }: ActionFunctionArgs) {
 			return json({ error: 'Invalid intent' }, { status: 400 })
 		}
 	}
+}
+
+async function getRandomActiveThemeId() {
+	const themes = await prisma.theme.findMany({
+		where: { isActive: true },
+		select: { id: true },
+	})
+	const randomTheme = themes[Math.floor(Math.random() * themes.length)]
+	return randomTheme?.id
 }

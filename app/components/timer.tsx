@@ -12,8 +12,8 @@ function formatTime(seconds: number) {
 
 export function Timer() {
 	const fetcher = useFetcher<typeof loader>()
-	const [timeLeft, setTimeLeft] = useState(1500)
-	const [duration, setDuration] = useState(1500)
+	const [timeLeft, setTimeLeft] = useState(10)
+	const [duration, setDuration] = useState(10)
 	const [isCompleting, setIsCompleting] = useState(false)
 	const dc = useDoubleCheck()
 
@@ -77,15 +77,15 @@ export function Timer() {
 		}
 	}, [timeLeft, fetcher, fetcher.data?.activeSession, isCompleting])
 
-	function adjustDuration(adjustment: number) {
-		setDuration((prev) => Math.max(10, Math.min(3600, prev + adjustment)))
-		if (!fetcher.data?.activeSession) {
-			setTimeLeft((prev) => Math.max(10, Math.min(3600, prev + adjustment)))
-		}
-	}
+	// function adjustDuration(adjustment: number) {
+	// 	setDuration((prev) => Math.max(10, Math.min(3600, prev + adjustment)))
+	// 	if (!fetcher.data?.activeSession) {
+	// 		setTimeLeft((prev) => Math.max(10, Math.min(3600, prev + adjustment)))
+	// 	}
+	// }
 
 	return (
-		<div className="text-center">
+		<div className="flex flex-col items-center justify-center p-4">
 			<div className="relative mb-8 inline-flex h-64 w-64 items-center justify-center rounded-full">
 				{/* Progress Circle */}
 				<svg className="absolute h-full w-full -rotate-90">
@@ -116,7 +116,7 @@ export function Timer() {
 			</div>
 
 			{/* Time Adjustment Buttons */}
-			<div className="mb-8 flex justify-center gap-4">
+			{/* <div className="mb-8 flex justify-center gap-4">
 				<button
 					onClick={() => adjustDuration(-300)}
 					className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600 disabled:opacity-50"
@@ -159,7 +159,7 @@ export function Timer() {
 				>
 					+5m
 				</button>
-			</div>
+			</div> */}
 
 			{/* Start/Stop Button */}
 			<fetcher.Form method="POST" action="/resources/focus-session">
