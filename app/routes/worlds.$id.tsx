@@ -21,28 +21,11 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
 	invariantResponse(world, 'World not found', { status: 404 })
 
-	const userItems = await prisma.userItem.findMany({
-		where: { userId: world.user.id },
-		select: {
-			id: true,
-			quantity: true,
-			item: {
-				select: {
-					name: true,
-					images: {
-						select: { id: true },
-						take: 1,
-					},
-				},
-			},
-		},
-	})
-
-	return json({ world, userItems })
+	return json({ world })
 }
 
 export default function WorldRoute() {
-	const { world, userItems } = useLoaderData<typeof loader>()
+	const { world } = useLoaderData<typeof loader>()
 
 	return (
 		<div className="flex flex-col gap-4">
@@ -55,9 +38,7 @@ export default function WorldRoute() {
 					<p className="mt-2 text-muted-foreground">{world.description}</p>
 				) : null}
 			</div>
-			<div className="relative h-[600px] w-full">
-				<Canvas userItems={userItems} />
-			</div>
+			<div className="relative h-[600px] w-full"></div>
 		</div>
 	)
 }
