@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { type loader } from '#app/routes/resources+/focus-session'
 import { useDoubleCheck } from '#app/utils/misc.tsx'
 import { StatusButton } from './ui/status-button.tsx'
+import { useUserPreferences } from '#app/utils/preferences.js'
 
 function formatTime(seconds: number) {
 	const minutes = Math.floor(seconds / 60)
@@ -11,9 +12,13 @@ function formatTime(seconds: number) {
 }
 
 export function Timer() {
+	const preferences = useUserPreferences()
 	const fetcher = useFetcher<typeof loader>()
 	const [timeLeft, setTimeLeft] = useState(10)
-	const [duration, setDuration] = useState(10)
+	const [duration, setDuration] = useState(
+		// preferences?.focusSessionDuration ?? 10,
+		5, // TODO: Remove this after testing
+	)
 	const [isCompleting, setIsCompleting] = useState(false)
 	const dc = useDoubleCheck()
 

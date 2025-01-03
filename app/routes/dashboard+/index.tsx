@@ -4,22 +4,46 @@ import { Timer } from '#app/components/timer'
 import { requireUserId } from '#app/utils/auth.server'
 import { prisma } from '#app/utils/db.server'
 import { getTimeOfDayGreeting } from '#app/utils/misc'
+import { clsx } from 'clsx'
 
 export async function loader({ request }: LoaderFunctionArgs) {
 	const userId = await requireUserId(request)
 	const [user, userItems] = await Promise.all([
 		prisma.user.findUniqueOrThrow({
 			where: { id: userId },
-			select: { name: true, username: true },
+			select: {
+				name: true,
+				username: true,
+				preferences: {
+					select: {
+						musicProvider: true,
+						spotifyPlaylistUrl: true,
+						youtubePlaylistUrl: true,
+					},
+				},
+			},
 		}),
 		prisma.userItem.findMany({
 			where: { userId },
-			include: {
+			take: 12,
+			select: {
+				id: true,
+				quantity: true,
 				item: {
-					include: {
-						images: true,
+					select: {
+						name: true,
+						rarity: true,
+						images: {
+							select: { id: true },
+							take: 1,
+						},
 						themeCategory: {
-							include: { theme: true },
+							select: {
+								name: true,
+								theme: {
+									select: { name: true },
+								},
+							},
 						},
 					},
 				},
@@ -44,7 +68,15 @@ export default function Dashboard() {
 					a
 				</div>
 				<div className="min-h-[50vh] flex-1 rounded-xl bg-muted/50 p-4 md:min-h-min">
-					b
+					<MusicPlayer
+						musicProvider={user.preferences?.musicProvider ?? 'SPOTIFY'}
+						spotifyPlaylistUrl={
+							user.preferences?.spotifyPlaylistUrl ?? '0vvXsWCC9xrXsKd4FyS8kM'
+						}
+						youtubePlaylistUrl={
+							user.preferences?.youtubePlaylistUrl ?? 'jfKfPfyJRdk'
+						}
+					/>
 				</div>
 				<div className="min-h-[50vh] flex-1 rounded-xl bg-muted/50 p-4 md:min-h-min">
 					<Timer />
@@ -71,7 +103,16 @@ export default function Dashboard() {
 									<div className="h-[50px] w-[50px] rounded-lg bg-muted" />
 								)}
 								<div className="flex flex-col justify-center">
-									<h3 className="font-semibold">{userItem.item.name}</h3>
+									<h3
+										className={clsx('font-semibold', {
+											'text-white': userItem.item.rarity === 'COMMON',
+											'text-blue-500': userItem.item.rarity === 'RARE',
+											'text-purple-500': userItem.item.rarity === 'EPIC',
+											'text-orange-500': userItem.item.rarity === 'LEGENDARY',
+										})}
+									>
+										{userItem.item.name}
+									</h3>
 									<p className="text-sm text-muted-foreground">
 										{userItem.item.themeCategory.theme.name} •{' '}
 										{userItem.item.themeCategory.name}
@@ -83,5 +124,41 @@ export default function Dashboard() {
 				</div>
 			</div>
 		</>
+	)
+}
+
+function MusicPlayer({
+	musicProvider,
+	spotifyPlaylistUrl,
+	youtubePlaylistUrl,
+}: {
+	musicProvider: string
+	spotifyPlaylistUrl: string
+	youtubePlaylistUrl: string
+}) {
+	if (musicProvider === 'YOUTUBE') {
+		return (
+			<iframe
+				src={`https://www.youtube.com/embed/${youtubePlaylistUrl}?autoplay=1`}
+				width="100%"
+				height="100%"
+				frameBorder="0"
+				allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+				loading="lazy"
+				title="YouTube lofi stream embed"
+			/>
+		)
+	}
+
+	return (
+		<iframe
+			src={`https://open.spotify.com/embed/playlist/${spotifyPlaylistUrl}`}
+			width="100%"
+			height="100%"
+			frameBorder="0"
+			allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+			loading="lazy"
+			title="Spotify lofi playlist embed"
+		/>
 	)
 }

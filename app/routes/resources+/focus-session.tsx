@@ -27,30 +27,38 @@ export async function action({ request }: ActionFunctionArgs) {
 	if (intent === 'complete') {
 		const user = await prisma.user.findUnique({
 			where: { id: userId },
-			select: { preferredThemeId: true },
+			select: { preferences: { select: { preferredThemeId: true } } },
 		})
 
-		const themeId = user?.preferredThemeId ?? (await getRandomActiveThemeId())
+		const themeId =
+			user?.preferences?.preferredThemeId ??
+			(await getRandomActiveThemeId(userId))
 
 		const category = await prisma.themeCategory.findFirst({
 			where: { themeId },
-			include: { items: true },
+			include: {
+				items: {
+					select: {
+						id: true,
+						droprate: true,
+					},
+				},
+			},
 		})
 
 		if (category?.items.length) {
-			const randomItem =
-				category.items[Math.floor(Math.random() * category.items.length)]
+			const selectedItem = selectItemByDroprate(category.items)
 
 			await prisma.userItem.upsert({
 				where: {
 					userId_itemId: {
 						userId,
-						itemId: randomItem.id,
+						itemId: selectedItem.id,
 					},
 				},
 				create: {
 					userId,
-					itemId: randomItem.id,
+					itemId: selectedItem.id,
 					quantity: 1,
 				},
 				update: {
@@ -136,11 +144,36 @@ export async function action({ request }: ActionFunctionArgs) {
 	}
 }
 
-async function getRandomActiveThemeId() {
-	const themes = await prisma.theme.findMany({
-		where: { isActive: true },
-		select: { id: true },
-	})
+async function getRandomActiveThemeId(userId: string) {
+	const [userPrefs, themes] = await Promise.all([
+		prisma.userPreferences.findUnique({
+			where: { userId },
+			select: { preferredThemeId: true },
+		}),
+		prisma.theme.findMany({
+			where: { isActive: true },
+			select: { id: true },
+		}),
+	])
+
+	if (userPrefs?.preferredThemeId) return userPrefs.preferredThemeId
+
 	const randomTheme = themes[Math.floor(Math.random() * themes.length)]
 	return randomTheme?.id
+}
+
+function selectItemByDroprate(items: Array<{ id: string; droprate: number }>): {
+	id: string
+	droprate: number
+} {
+	if (!items.length) throw new Error('No items available')
+
+	const totalWeight = items.reduce((sum, item) => sum + item.droprate, 0)
+	let random = Math.random() * totalWeight
+
+	for (const item of items) {
+		random -= item.droprate
+		if (random <= 0) return item
+	}
+	return items[0]!
 }

@@ -107,6 +107,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
 									},
 								},
 							},
+							preferences: {
+								select: {
+									preferredThemeId: true,
+									focusSessionDuration: true,
+									musicProvider: true,
+									spotifyPlaylistUrl: true,
+									youtubePlaylistUrl: true,
+								},
+							},
 						},
 						where: { id: userId },
 					}),

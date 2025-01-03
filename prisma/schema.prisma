@@ -29,10 +29,8 @@ model User {
   focusSessions FocusSession[]
   userItems UserItem[]
 
-  preferredTheme Theme? @relation("UserPreferredTheme", fields: [preferredThemeId], references: [id])
-  preferredThemeId String?
+  preferences UserPreferences?
 
-  @@index([preferredThemeId])
 }
 
 model Note {
@@ -202,7 +200,7 @@ model Theme {
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
-    preferredByUsers User[] @relation("UserPreferredTheme")
+    userPreferences UserPreferences[] @relation("UserPreferredTheme")
 }
 
 model ThemeCategory {
@@ -266,4 +264,25 @@ model UserItem {
     updatedAt DateTime @updatedAt
 
     @@unique([userId, itemId])
+}
+
+model UserPreferences {
+	id String @id @default(cuid())
+	user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+	userId String @unique
+
+	// Theme preferences
+	preferredThemeId String?
+	theme Theme? @relation("UserPreferredTheme", fields: [preferredThemeId], references: [id])
+
+	// Focus preferences
+	focusSessionDuration Int @default(1500) // 25 minutes in seconds
+	musicProvider String @default("SPOTIFY")
+	spotifyPlaylistUrl String @default("0vvXsWCC9xrXsKd4FyS8kM")
+	youtubePlaylistUrl String @default("jfKfPfyJRdk")
+
+	createdAt DateTime @default(now())
+	updatedAt DateTime @updatedAt
+
+	@@index([preferredThemeId])
 }

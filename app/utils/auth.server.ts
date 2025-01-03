@@ -136,6 +136,9 @@ export async function signup({
 							hash: hashedPassword,
 						},
 					},
+					preferences: {
+						create: {},
+					},
 				},
 			},
 		},
@@ -173,6 +176,9 @@ export async function signupWithConnection({
 					image: imageUrl
 						? { create: await downloadFile(imageUrl) }
 						: undefined,
+					preferences: {
+						create: {},
+					},
 				},
 			},
 		},
