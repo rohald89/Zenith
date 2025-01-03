@@ -34,7 +34,7 @@ export async function action({ request }: ActionFunctionArgs) {
 			user?.preferences?.preferredThemeId ??
 			(await getRandomActiveThemeId(userId))
 
-		const category = await prisma.themeCategory.findFirst({
+		const category = await prisma.themeCategory.findMany({
 			where: { themeId },
 			include: {
 				items: {
@@ -46,8 +46,9 @@ export async function action({ request }: ActionFunctionArgs) {
 			},
 		})
 
-		if (category?.items.length) {
-			const selectedItem = selectItemByDroprate(category.items)
+		if (category.length) {
+			const allItems = category.flatMap((cat) => cat.items)
+			const selectedItem = selectItemByDroprate(allItems)
 
 			await prisma.userItem.upsert({
 				where: {

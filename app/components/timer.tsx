@@ -2,8 +2,8 @@ import { useFetcher } from '@remix-run/react'
 import { useEffect, useState } from 'react'
 import { type loader } from '#app/routes/resources+/focus-session'
 import { useDoubleCheck } from '#app/utils/misc.tsx'
-import { StatusButton } from './ui/status-button.tsx'
 import { useUserPreferences } from '#app/utils/preferences.js'
+import { StatusButton } from './ui/status-button.tsx'
 
 function formatTime(seconds: number) {
 	const minutes = Math.floor(seconds / 60)
@@ -16,11 +16,52 @@ export function Timer() {
 	const fetcher = useFetcher<typeof loader>()
 	const [timeLeft, setTimeLeft] = useState(10)
 	const [duration, setDuration] = useState(
-		// preferences?.focusSessionDuration ?? 10,
-		5, // TODO: Remove this after testing
+		// preferences?.focusSessionDuration ?? 1500, // 25 minutes default
+		1, // TODO: Remove this after testing
 	)
+	const [isBreak, setIsBreak] = useState(false)
 	const [isCompleting, setIsCompleting] = useState(false)
 	const dc = useDoubleCheck()
+	const [breakTimer, setBreakTimer] = useState<NodeJS.Timeout | null>(null)
+
+	function startBreak(minutes: number) {
+		setIsBreak(true)
+		setDuration(minutes * 60)
+		setTimeLeft(minutes * 60)
+
+		const timer = setInterval(() => {
+			setTimeLeft((prev) => {
+				if (prev <= 1) {
+					clearInterval(timer)
+					setIsBreak(false)
+					setDuration(preferences?.focusSessionDuration ?? 1500)
+					return preferences?.focusSessionDuration ?? 1500
+				}
+				return prev - 1
+			})
+		}, 1000)
+
+		setBreakTimer(timer)
+	}
+
+	function stopBreak() {
+		if (breakTimer) {
+			clearInterval(breakTimer)
+			setBreakTimer(null)
+		}
+		setIsBreak(false)
+		setDuration(preferences?.focusSessionDuration ?? 1500)
+		setTimeLeft(preferences?.focusSessionDuration ?? 1500)
+	}
+
+	// Reset state when break completes
+	useEffect(() => {
+		if (isBreak && timeLeft === 0) {
+			setIsBreak(false)
+			setDuration(preferences?.focusSessionDuration ?? 1500)
+			setTimeLeft(preferences?.focusSessionDuration ?? 1500)
+		}
+	}, [timeLeft, isBreak, preferences?.focusSessionDuration])
 
 	/**
 	 * Loads the initial session state when the component mounts
@@ -102,7 +143,7 @@ export function Timer() {
 						cx="128"
 						cy="128"
 					/>
-					{fetcher.data?.activeSession && (
+					{(fetcher.data?.activeSession || isBreak) && (
 						<circle
 							className="stroke-muted transition-all duration-1000"
 							fill="none"
@@ -112,7 +153,11 @@ export function Timer() {
 							cy="128"
 							strokeDasharray="779.2"
 							strokeDashoffset={
-								779.2 * (timeLeft / fetcher.data.activeSession.duration)
+								779.2 *
+								(timeLeft /
+									(isBreak
+										? duration
+										: (fetcher.data?.activeSession?.duration ?? duration)))
 							}
 						/>
 					)}
@@ -120,78 +165,61 @@ export function Timer() {
 				<div className="text-6xl font-bold">{formatTime(timeLeft)}</div>
 			</div>
 
-			{/* Time Adjustment Buttons */}
-			{/* <div className="mb-8 flex justify-center gap-4">
-				<button
-					onClick={() => adjustDuration(-300)}
-					className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600 disabled:opacity-50"
-					disabled={!!fetcher.data?.activeSession}
+			{/* Only show focus session form when not in break mode */}
+			{!isBreak ? (
+				<fetcher.Form method="POST" action="/resources/focus-session">
+					<input type="hidden" name="duration" value={duration} />
+					{fetcher.data?.activeSession ? (
+						<StatusButton
+							status={fetcher.state === 'submitting' ? 'pending' : 'idle'}
+							{...dc.getButtonProps({
+								name: 'intent',
+								value: 'stop',
+								className:
+									'rounded bg-blue-500 px-8 py-3 text-white hover:bg-blue-600',
+							})}
+						>
+							{dc.doubleCheck ? 'Are you sure?' : 'Stop Focus Session'}
+						</StatusButton>
+					) : (
+						<StatusButton
+							status={fetcher.state === 'submitting' ? 'pending' : 'idle'}
+							name="intent"
+							value="start"
+							className="rounded bg-blue-500 px-8 py-3 text-white hover:bg-blue-600"
+						>
+							Start Focus Session
+						</StatusButton>
+					)}
+				</fetcher.Form>
+			) : (
+				<StatusButton
+					status="idle"
+					onClick={stopBreak}
+					className="rounded bg-blue-500 px-8 py-3 text-white hover:bg-blue-600"
 				>
-					-5m
-				</button>
-				<button
-					onClick={() => adjustDuration(-60)}
-					className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600 disabled:opacity-50"
-					disabled={!!fetcher.data?.activeSession}
-				>
-					-1m
-				</button>
-				<button
-					onClick={() => adjustDuration(-10)}
-					className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600 disabled:opacity-50"
-					disabled={!!fetcher.data?.activeSession}
-				>
-					-10s
-				</button>
-				<button
-					onClick={() => adjustDuration(10)}
-					className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600 disabled:opacity-50"
-					disabled={!!fetcher.data?.activeSession}
-				>
-					+10s
-				</button>
-				<button
-					onClick={() => adjustDuration(60)}
-					className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600 disabled:opacity-50"
-					disabled={!!fetcher.data?.activeSession}
-				>
-					+1m
-				</button>
-				<button
-					onClick={() => adjustDuration(300)}
-					className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600 disabled:opacity-50"
-					disabled={!!fetcher.data?.activeSession}
-				>
-					+5m
-				</button>
-			</div> */}
+					Stop Break
+				</StatusButton>
+			)}
 
-			{/* Start/Stop Button */}
-			<fetcher.Form method="POST" action="/resources/focus-session">
-				<input type="hidden" name="duration" value={duration} />
-				{fetcher.data?.activeSession ? (
-					<StatusButton
-						status={fetcher.state === 'submitting' ? 'pending' : 'idle'}
-						{...dc.getButtonProps({
-							name: 'intent',
-							value: 'stop',
-							className:
-								'rounded bg-blue-500 px-8 py-3 text-white hover:bg-blue-600',
-						})}
-					>
-						{dc.doubleCheck ? 'Are you sure?' : 'Stop Focus Session'}
-					</StatusButton>
-				) : (
-					<StatusButton
-						status={fetcher.state === 'submitting' ? 'pending' : 'idle'}
-						name="intent"
-						value="start"
-						className="rounded bg-blue-500 px-8 py-3 text-white hover:bg-blue-600"
-					>
-						Start Focus Session
-					</StatusButton>
+			<div className="mt-4 flex gap-4">
+				{!fetcher.data?.activeSession && !isBreak && (
+					<>
+						<button
+							onClick={() => startBreak(5)}
+							className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
+						>
+							Short Break
+						</button>
+						<button
+							onClick={() => startBreak(20)}
+							className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
+						>
+							Long Break
+						</button>
+					</>
 				)}
-			</fetcher.Form>
+			</div>
 		</div>
 	)
 }

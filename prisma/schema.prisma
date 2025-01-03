@@ -28,7 +28,7 @@ model User {
 
   focusSessions FocusSession[]
   userItems UserItem[]
-
+  worlds World[]
   preferences UserPreferences?
 
 }
@@ -285,4 +285,19 @@ model UserPreferences {
 	updatedAt DateTime @updatedAt
 
 	@@index([preferredThemeId])
+}
+
+model World {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  public      Boolean  @default(false)
+  canvas      String   // Will store stringified fabric.js canvas state
+  image       Bytes?   // New field to store the canvas image
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
 }
