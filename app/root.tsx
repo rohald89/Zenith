@@ -1,5 +1,6 @@
 import {
 	json,
+	redirect,
 	type LoaderFunctionArgs,
 	type HeadersFunction,
 	type LinksFunction,
@@ -88,6 +89,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		type: 'getUserId',
 		desc: 'getUserId in root',
 	})
+
+	// Redirect from landing page to dashboard if user is signed in
+	if (userId && new URL(request.url).pathname === '/') {
+		return redirect('/dashboard')
+	}
 
 	const user = userId
 		? await time(
@@ -213,28 +219,43 @@ export function Layout({ children }: { children: React.ReactNode }) {
 	)
 }
 
+function MobileMessage() {
+	return (
+		<div className="flex h-[80vh] flex-col items-center justify-center gap-4 p-8 text-center">
+			<h2 className="text-4xl font-bold">📰 Breaking News! 📰</h2>
+			<p className="max-w-md text-xl text-muted-foreground">
+				Developer promises mobile support, <br /> found procrastinating instead!
+				🏖️
+			</p>
+			<p className="mt-8 max-w-md text-muted-foreground">
+				Please use a device wider than 1280px
+			</p>
+		</div>
+	)
+}
+
 function App() {
 	const data = useLoaderData<typeof loader>()
 	const user = useOptionalUser()
 	const theme = useTheme()
 	const matches = useMatches()
-	const isOnSearchPage = matches.find((m) => m.id === 'routes/users+/index')
+	// const isOnSearchPage = matches.find((m) => m.id === 'routes/users+/index')
 	const isDashboardRoute = matches.some((match) =>
 		match.id.startsWith('routes/dashboard'),
 	)
-	const searchBar = isOnSearchPage ? null : <SearchBar status="idle" />
+	// const searchBar = isOnSearchPage ? null : <SearchBar status="idle" />
 	useToast(data.toast)
 
 	return (
 		<>
-			<div className="flex min-h-screen flex-col justify-between">
+			<div className="hidden min-h-screen flex-col justify-between xl:flex">
 				{!isDashboardRoute ? (
 					<header className="container py-6">
 						<nav className="flex flex-wrap items-center justify-between gap-4 sm:flex-nowrap md:gap-8">
 							<Logo />
-							<div className="ml-auto hidden max-w-sm flex-1 sm:block">
+							{/* <div className="ml-auto hidden max-w-sm flex-1 sm:block">
 								{searchBar}
-							</div>
+							</div> */}
 							<div className="flex items-center gap-10">
 								{user ? (
 									<UserDropdown />
@@ -244,7 +265,7 @@ function App() {
 									</Button>
 								)}
 							</div>
-							<div className="block w-full sm:hidden">{searchBar}</div>
+							{/* <div className="block w-full sm:hidden">{searchBar}</div> */}
 						</nav>
 					</header>
 				) : null}
@@ -260,6 +281,9 @@ function App() {
 					</div>
 				) : null}
 			</div>
+			<div className="block xl:hidden">
+				<MobileMessage />
+			</div>
 			<EpicToaster closeButton position="top-center" theme={theme} />
 			<EpicProgress />
 		</>
@@ -269,11 +293,8 @@ function App() {
 function Logo() {
 	return (
 		<Link to="/" className="group grid leading-snug">
-			<span className="font-light transition group-hover:-translate-x-1">
-				epic
-			</span>
-			<span className="font-bold transition group-hover:translate-x-1">
-				notes
+			<span className="font-bold transition group-hover:-translate-y-1">
+				Zenith
 			</span>
 		</Link>
 	)
@@ -290,7 +311,7 @@ function AppWithProviders() {
 
 export default withSentry(AppWithProviders)
 
-function UserDropdown() {
+export function UserDropdown() {
 	const user = useUser()
 	const submit = useSubmit()
 	const formRef = useRef<HTMLFormElement>(null)

@@ -1,59 +1,70 @@
 import { json, type LoaderFunctionArgs } from '@remix-run/node'
 import { useLoaderData } from '@remix-run/react'
+import { clsx } from 'clsx'
+import { Canvas } from '#app/components/canvas.js'
 import { Timer } from '#app/components/timer'
+import { ScrollArea } from '#app/components/ui/scroll-area.js'
 import { requireUserId } from '#app/utils/auth.server'
 import { prisma } from '#app/utils/db.server'
 import { getTimeOfDayGreeting } from '#app/utils/misc'
-import { clsx } from 'clsx'
-import { ScrollArea } from '#app/components/ui/scroll-area.js'
-import { useEffect, useRef } from 'react'
-import { Canvas } from '#app/components/canvas.js'
 
 export async function loader({ request }: LoaderFunctionArgs) {
 	const userId = await requireUserId(request)
-	const [user, userItems] = await Promise.all([
-		prisma.user.findUniqueOrThrow({
-			where: { id: userId },
-			select: {
-				name: true,
-				username: true,
-				preferences: {
-					select: {
-						musicProvider: true,
-						spotifyPlaylistUrl: true,
-						youtubePlaylistUrl: true,
-					},
+	const user = await prisma.user.findUniqueOrThrow({
+		where: { id: userId },
+		select: {
+			name: true,
+			username: true,
+			preferences: {
+				select: {
+					musicProvider: true,
+					spotifyPlaylistUrl: true,
+					youtubePlaylistUrl: true,
+					preferredThemeId: true,
 				},
 			},
-		}),
-		prisma.userItem.findMany({
-			where: { userId },
-			take: 12,
-			select: {
-				id: true,
-				quantity: true,
-				item: {
-					select: {
-						name: true,
-						rarity: true,
-						images: {
-							select: { id: true },
-							take: 1,
+		},
+	})
+
+	const userItems = await prisma.userItem.findMany({
+		where: {
+			userId,
+			...(user.preferences?.preferredThemeId
+				? {
+						item: {
+							themeCategory: {
+								themeId: user.preferences.preferredThemeId,
+							},
 						},
-						themeCategory: {
-							select: {
-								name: true,
-								theme: {
-									select: { name: true },
-								},
+					}
+				: {}),
+		},
+		take: 12,
+		orderBy: { updatedAt: 'desc' },
+		select: {
+			id: true,
+			quantity: true,
+			item: {
+				select: {
+					name: true,
+					rarity: true,
+					images: {
+						select: { id: true },
+						take: 1,
+					},
+					themeCategory: {
+						select: {
+							name: true,
+							theme: {
+								select: { name: true },
 							},
 						},
 					},
 				},
 			},
-			orderBy: { updatedAt: 'desc' },
-		}),
-	])
+		},
+	})
+
 	return json({ user, userItems })
 }
 

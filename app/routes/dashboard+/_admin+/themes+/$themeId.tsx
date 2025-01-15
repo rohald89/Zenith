@@ -1,30 +1,44 @@
 import { json, type LoaderFunctionArgs } from '@remix-run/node'
 import { Link, useLoaderData } from '@remix-run/react'
-import { Button } from '#app/components/ui/button'
-import { prisma } from '#app/utils/db.server'
+import { Button } from '#app/components/ui/button.tsx'
+import { prisma } from '#app/utils/db.server.ts'
+import { requireUserWithRole } from '#app/utils/permissions.server.ts'
 import { invariantResponse } from '@epic-web/invariant'
-import { type BreadcrumbHandle } from '#app/routes/settings+/profile.js'
-import { SEOHandle } from '@nasa-gcn/remix-seo'
 
-export const handle: BreadcrumbHandle & SEOHandle = {
-	breadcrumb: 'Theme Details',
-}
+export async function loader({ request, params }: LoaderFunctionArgs) {
+	await requireUserWithRole(request, 'admin')
 
-export async function loader({ params }: LoaderFunctionArgs) {
 	const theme = await prisma.theme.findUnique({
 		where: { id: params.themeId },
-		include: {
+		select: {
+			id: true,
+			name: true,
+			description: true,
+			isActive: true,
 			themeCategories: {
-				include: {
-					_count: {
-						select: { items: true },
+				select: {
+					id: true,
+					name: true,
+					items: {
+						select: {
+							id: true,
+							name: true,
+							description: true,
+							rarity: true,
+							droprate: true,
+							images: {
+								select: {
+									id: true,
+								},
+							},
+						},
 					},
 				},
 			},
 		},
 	})
 
-	invariantResponse(theme, 'Theme not found', { status: 404 })
+	invariantResponse(theme, 'Not found', { status: 404 })
 
 	return json({ theme })
 }
@@ -33,39 +47,61 @@ export default function ThemeDetails() {
 	const { theme } = useLoaderData<typeof loader>()
 
 	return (
-		<div className="container py-8">
+		<div className="flex flex-col gap-4">
 			<div className="flex justify-between">
-				<h1 className="text-h1">{theme.name}</h1>
-				<Button asChild variant="outline">
-					<Link to="edit">Edit Theme</Link>
-				</Button>
+				<h2 className="text-h2">{theme.name}</h2>
+				<div className="flex gap-4">
+					<Button asChild>
+						<Link to="edit">Edit Theme</Link>
+					</Button>
+					<Button asChild>
+						<Link to="items/new">Add Item</Link>
+					</Button>
+				</div>
 			</div>
 
-			<div className="mt-8 grid gap-6">
-				<div>
-					<h2 className="text-xl font-semibold">Description</h2>
-					<p className="mt-2 text-muted-foreground">{theme.description}</p>
-				</div>
+			<div className="flex flex-col gap-4">
+				<p>{theme.description}</p>
+				<p>Status: {theme.isActive ? 'Active' : 'Inactive'}</p>
+			</div>
 
-				<div>
-					<h2 className="text-xl font-semibold">Categories</h2>
-					<ul className="mt-4 grid gap-4 md:grid-cols-2">
-						{theme.themeCategories.map((category) => (
-							<li
-								key={category.id}
-								className="rounded-lg border border-muted-foreground/20 p-4"
-							>
-								<h3 className="font-medium">{category.name}</h3>
-								<p className="text-sm text-muted-foreground">
-									{category.description}
-								</p>
-								<p className="mt-2 text-sm">
-									{category._count.items} items in this category
-								</p>
-							</li>
-						))}
-					</ul>
-				</div>
+			<div className="flex flex-col gap-4">
+				<h3 className="text-h3">Categories</h3>
+				{theme.themeCategories.map((category) => (
+					<div key={category.id} className="flex flex-col gap-4">
+						<h4 className="text-h4">
+							{category.name} ({category.items.length} items)
+						</h4>
+						<div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+							{category.items.map((item) => (
+								<div
+									key={item.id}
+									className="flex flex-col gap-4 rounded-lg border border-muted-foreground p-4"
+								>
+									<div className="flex flex-wrap gap-4">
+										{item.images.map((image) => (
+											<img
+												key={image.id}
+												src={`/resources/item-images/${image.id}`}
+												alt=""
+												className="h-32 w-32 rounded-lg object-cover"
+											/>
+										))}
+									</div>
+									<div className="flex flex-col gap-2">
+										<h5 className="text-h5">{item.name}</h5>
+										<p>{item.description}</p>
+										<p>Rarity: {item.rarity}</p>
+										<p>Drop Rate: {item.droprate}%</p>
+										<Button asChild>
+											<Link to={`items/${item.id}/edit`}>Edit Item</Link>
+										</Button>
+									</div>
+								</div>
+							))}
+						</div>
+					</div>
+				))}
 			</div>
 		</div>
 	)

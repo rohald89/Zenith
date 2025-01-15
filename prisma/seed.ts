@@ -20,6 +20,113 @@ async function seed() {
 	const noteImages = await getNoteImages()
 	const userImages = await getUserImages()
 
+	console.time(`🌍 Creating themes, categories, and items...`)
+
+	// Create Park Theme first
+	const parkTheme = await prisma.theme.create({
+		data: {
+			name: 'Park',
+			description: 'Build your own peaceful park with trees, benches, and decorations.',
+			isActive: true,
+			themeCategories: {
+				create: [
+					{
+						name: 'Trees',
+						description: 'Various trees to populate your park',
+						items: {
+							create: [
+								{
+									name: 'Pine Tree',
+									description: 'A common pine tree, perfect for any park',
+									rarity: 'COMMON',
+									droprate: 50,
+									images: {
+										create: [
+											{
+												altText: 'A simple pine tree',
+												contentType: 'image/png',
+												blob: await img({ filepath: './tests/fixtures/images/items/pine-tree.png' }).then(img => img.blob),
+											},
+										],
+									},
+								},
+								{
+									name: 'Cherry Blossom',
+									description: 'A beautiful cherry blossom tree in full bloom',
+									rarity: 'RARE',
+									droprate: 15,
+									images: {
+										create: [
+											{
+												altText: 'A pink cherry blossom tree',
+												contentType: 'image/png',
+												blob: await img({ filepath: './tests/fixtures/images/items/cherry-blossom.png' }).then(img => img.blob),
+											},
+										],
+									},
+								},
+								{
+									name: 'General Sherman',
+									description: 'The largest known living single-stem tree on Earth',
+									rarity: 'LEGENDARY',
+									droprate: 1,
+									images: {
+										create: [
+											{
+												altText: 'The mighty General Sherman sequoia',
+												contentType: 'image/png',
+												blob: await img({ filepath: './tests/fixtures/images/items/general-sherman.png' }).then(img => img.blob),
+											},
+										],
+									},
+								},
+							],
+						},
+					},
+					{
+						name: 'Furniture',
+						description: 'Park furniture and decorations',
+						items: {
+							create: [
+								{
+									name: 'Wooden Bench',
+									description: 'A comfortable wooden bench for park visitors',
+									rarity: 'COMMON',
+									droprate: 45,
+									images: {
+										create: [
+											{
+												altText: 'A simple wooden park bench',
+												contentType: 'image/png',
+												blob: await img({ filepath: './tests/fixtures/images/items/wooden-bench.png' }).then(img => img.blob),
+											},
+										],
+									},
+								},
+								{
+									name: 'Ornate Fountain',
+									description: 'A beautiful decorative fountain',
+									rarity: 'EPIC',
+									droprate: 5,
+									images: {
+										create: [
+											{
+												altText: 'An ornate water fountain',
+												contentType: 'image/png',
+												blob: await img({ filepath: './tests/fixtures/images/items/fountain.png' }).then(img => img.blob),
+											},
+										],
+									},
+								},
+							],
+						},
+					},
+				],
+			},
+		},
+	})
+
+	// Create regular users with Park theme as default
 	for (let index = 0; index < totalUsers; index++) {
 		const userData = createUser()
 		await prisma.user
@@ -30,6 +137,11 @@ async function seed() {
 					password: { create: createPassword(userData.username) },
 					image: { create: userImages[index % userImages.length] },
 					roles: { connect: { name: 'user' } },
+					preferences: {
+						create: {
+							preferredThemeId: parkTheme.id
+						}
+					},
 					notes: {
 						create: Array.from({
 							length: faker.number.int({ min: 1, max: 3 }),
@@ -108,6 +220,11 @@ async function seed() {
 				create: { providerName: 'github', providerId: githubUser.profile.id },
 			},
 			roles: { connect: [{ name: 'admin' }, { name: 'user' }] },
+			preferences: {
+				create: {
+					preferredThemeId: parkTheme.id
+				}
+			},
 			notes: {
 				create: [
 					{
@@ -130,7 +247,7 @@ async function seed() {
 						id: '260366b1',
 						title: 'Not bears',
 						content:
-							"Although you may have heard people call them koala 'bears', these awesome animals aren’t bears at all – they are in fact marsupials. A group of mammals, most marsupials have pouches where their newborns develop.",
+							"Although you may have heard people call them koala 'bears', these awesome animals aren't bears at all – they are in fact marsupials. A group of mammals, most marsupials have pouches where their newborns develop.",
 					},
 					{
 						id: 'bb79cf45',
@@ -211,240 +328,7 @@ async function seed() {
 	})
 	console.timeEnd(`🐨 Created admin user "kody"`)
 
-    console.time(`🌍 Creating themes, categories, and items...`)
-
-    // Create Park Theme
-    await prisma.theme.create({
-    data: {
-        name: 'Park',
-        description: 'Build your own peaceful park with trees, benches, and decorations.',
-        isActive: true,
-        themeCategories: {
-        create: [
-            {
-            name: 'Trees',
-            description: 'Various trees to populate your park',
-            items: {
-                create: [
-                {
-                    name: 'Pine Tree',
-                    description: 'A common pine tree, perfect for any park',
-                    rarity: 'COMMON',
-                    droprate: 50,
-                    images: {
-                    create: [
-                        {
-                        altText: 'A simple pine tree',
-                        contentType: 'image/png',
-                        blob: await img({ filepath: './tests/fixtures/images/items/pine-tree.png' }).then(img => img.blob),
-                        },
-                    ],
-                    },
-                },
-                {
-                    name: 'Cherry Blossom',
-                    description: 'A beautiful cherry blossom tree in full bloom',
-                    rarity: 'RARE',
-                    droprate: 15,
-                    images: {
-                    create: [
-                        {
-                        altText: 'A pink cherry blossom tree',
-                        contentType: 'image/png',
-                        blob: await img({ filepath: './tests/fixtures/images/items/cherry-blossom.png' }).then(img => img.blob),
-                        },
-                    ],
-                    },
-                },
-                {
-                    name: 'General Sherman',
-                    description: 'The largest known living single-stem tree on Earth',
-                    rarity: 'LEGENDARY',
-                    droprate: 1,
-                    images: {
-                    create: [
-                        {
-                        altText: 'The mighty General Sherman sequoia',
-                        contentType: 'image/png',
-                        blob: await img({ filepath: './tests/fixtures/images/items/general-sherman.png' }).then(img => img.blob),
-                        },
-                    ],
-                    },
-                },
-                ],
-            },
-            },
-            {
-            name: 'Furniture',
-            description: 'Park furniture and decorations',
-            items: {
-                create: [
-                {
-                    name: 'Wooden Bench',
-                    description: 'A comfortable wooden bench for park visitors',
-                    rarity: 'COMMON',
-                    droprate: 45,
-                    images: {
-                    create: [
-                        {
-                        altText: 'A simple wooden park bench',
-                        contentType: 'image/png',
-                        blob: await img({ filepath: './tests/fixtures/images/items/wooden-bench.png' }).then(img => img.blob),
-                        },
-                    ],
-                    },
-                },
-                {
-                    name: 'Ornate Fountain',
-                    description: 'A beautiful decorative fountain',
-                    rarity: 'EPIC',
-                    droprate: 5,
-                    images: {
-                    create: [
-                        {
-                        altText: 'An ornate water fountain',
-                        contentType: 'image/png',
-                        blob: await img({ filepath: './tests/fixtures/images/items/fountain.png' }).then(img => img.blob),
-                        },
-                    ],
-                    },
-                },
-                ],
-            },
-            },
-        ],
-        },
-    },
-    })
-
-    // Create Space Theme
-    await prisma.theme.create({
-    data: {
-        name: 'Space',
-        description: 'Create your own galaxy with celestial objects and space stations.',
-        isActive: true,
-        themeCategories: {
-        create: [
-            {
-            name: 'Celestial Bodies',
-            description: 'Stars, planets, and other cosmic objects',
-            items: {
-                create: [
-                {
-                    name: 'Small Asteroid',
-                    description: 'A common space rock',
-                    rarity: 'COMMON',
-                    droprate: 50,
-                    images: {
-                    create: [
-                        {
-                        altText: 'A small asteroid',
-                        contentType: 'image/png',
-                        blob: await img({ filepath: './tests/fixtures/images/items/asteroid.png' }).then(img => img.blob),
-                        },
-                    ],
-                    },
-                },
-                {
-                    name: 'Red Dwarf Star',
-                    description: 'A small and cool star',
-                    rarity: 'RARE',
-                    droprate: 15,
-                    images: {
-                    create: [
-                        {
-                        altText: 'A red dwarf star',
-                        contentType: 'image/png',
-                        blob: await img({ filepath: './tests/fixtures/images/items/red-dwarf.png' }).then(img => img.blob),
-                        },
-                    ],
-                    },
-                },
-                {
-                    name: 'Black Hole',
-                    description: 'A mysterious cosmic phenomenon',
-                    rarity: 'LEGENDARY',
-                    droprate: 1,
-                    images: {
-                    create: [
-                        {
-                        altText: 'A black hole in space',
-                        contentType: 'image/png',
-                        blob: await img({ filepath: './tests/fixtures/images/items/black-hole.png' }).then(img => img.blob),
-                        },
-                    ],
-                    },
-                },
-                ],
-            },
-            },
-            {
-            name: 'Space Stations',
-            description: 'Various space stations and satellites',
-            items: {
-                create: [
-                {
-                    name: 'Basic Satellite',
-                    description: 'A simple communication satellite',
-                    rarity: 'COMMON',
-                    droprate: 45,
-                    images: {
-                    create: [
-                        {
-                        altText: 'A basic satellite',
-                        contentType: 'image/png',
-                        blob: await img({ filepath: './tests/fixtures/images/items/satellite.png' }).then(img => img.blob),
-                        },
-                    ],
-                    },
-                },
-                {
-                    name: 'Space Station Alpha',
-                    description: 'An advanced space station',
-                    rarity: 'EPIC',
-                    droprate: 5,
-                    images: {
-                    create: [
-                        {
-                        altText: 'An advanced space station',
-                        contentType: 'image/png',
-                        blob: await img({ filepath: './tests/fixtures/images/items/space-station.png' }).then(img => img.blob),
-                        },
-                    ],
-                    },
-                },
-                ],
-            },
-            },
-        ],
-        },
-    },
-    })
-
-    // Give Kody some items
-    const kody = await prisma.user.findFirst({
-    where: { username: 'kody' },
-    })
-
-    if (kody) {
-    // Get some items to give to Kody
-    const items = await prisma.item.findMany({
-        take: 5, // Give Kody 5 random items
-    })
-
-    // Create UserItems for Kody
-    for (const item of items) {
-        await prisma.userItem.create({
-        data: {
-            userId: kody.id,
-            itemId: item.id,
-            quantity: faker.number.int({ min: 1, max: 5 }), // Random quantity
-        },
-        })
-    }
-    }
-
-    console.timeEnd(`🌍 Creating themes, categories, and items...`)
+	console.timeEnd(`🌍 Creating themes, categories, and items...`)
 	console.timeEnd(`🌱 Database has been seeded`)
 }
 

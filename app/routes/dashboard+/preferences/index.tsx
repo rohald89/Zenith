@@ -92,6 +92,9 @@ export default function Preferences() {
 			<Form method="POST" className="mt-8 max-w-md space-y-6">
 				<div>
 					<label className="block text-sm font-medium">Theme</label>
+					<p className="text-sm text-muted-foreground">
+						Select a theme you wish to use for your focus sessions.
+					</p>
 					<select
 						name="themeId"
 						defaultValue={prefs?.preferredThemeId ?? ''}
@@ -110,6 +113,9 @@ export default function Preferences() {
 					<label className="block text-sm font-medium">
 						Focus Session Duration (minutes)
 					</label>
+					<p className="text-sm text-muted-foreground">
+						Select the default duration of your focus sessions.
+					</p>
 					<input
 						type="number"
 						name="focusSessionDuration"
@@ -122,6 +128,9 @@ export default function Preferences() {
 
 				<div>
 					<label className="block text-sm font-medium">Music Provider</label>
+					<p className="text-sm text-muted-foreground">
+						Select the music provider you wish to use for your focus sessions.
+					</p>
 					<select
 						name="musicProvider"
 						defaultValue={currentProvider}
@@ -135,6 +144,10 @@ export default function Preferences() {
 
 				<div>
 					<label className="block text-sm font-medium">Playlist URL</label>
+					<p className="text-sm text-muted-foreground">
+						Enter the URL of the playlist you wish to use for your focus
+						sessions. Keep this blank to use the default playlist (LoFi Girl).
+					</p>
 					<input
 						type="url"
 						name={

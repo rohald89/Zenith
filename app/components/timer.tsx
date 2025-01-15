@@ -16,8 +16,7 @@ export function Timer() {
 	const fetcher = useFetcher<typeof loader>()
 	const [timeLeft, setTimeLeft] = useState(10)
 	const [duration, setDuration] = useState(
-		// preferences?.focusSessionDuration ?? 1500, // 25 minutes default
-		1, // TODO: Remove this after testing
+		preferences?.focusSessionDuration ?? 1500, // 25 minutes default
 	)
 	const [isBreak, setIsBreak] = useState(false)
 	const [isCompleting, setIsCompleting] = useState(false)
@@ -170,17 +169,27 @@ export function Timer() {
 				<fetcher.Form method="POST" action="/resources/focus-session">
 					<input type="hidden" name="duration" value={duration} />
 					{fetcher.data?.activeSession ? (
-						<StatusButton
-							status={fetcher.state === 'submitting' ? 'pending' : 'idle'}
-							{...dc.getButtonProps({
-								name: 'intent',
-								value: 'stop',
-								className:
-									'rounded bg-blue-500 px-8 py-3 text-white hover:bg-blue-600',
-							})}
-						>
-							{dc.doubleCheck ? 'Are you sure?' : 'Stop Focus Session'}
-						</StatusButton>
+						<div className="flex flex-col gap-4">
+							<StatusButton
+								status={fetcher.state === 'submitting' ? 'pending' : 'idle'}
+								{...dc.getButtonProps({
+									name: 'intent',
+									value: 'stop',
+									className:
+										'rounded bg-blue-500 px-8 py-3 text-white hover:bg-blue-600',
+								})}
+							>
+								{dc.doubleCheck ? 'Are you sure?' : 'Stop Focus Session'}
+							</StatusButton>
+							<StatusButton
+								status={fetcher.state === 'submitting' ? 'pending' : 'idle'}
+								name="intent"
+								value="complete"
+								className="rounded bg-blue-500 px-8 py-3 text-white hover:bg-blue-600"
+							>
+								Complete Focus Session
+							</StatusButton>
+						</div>
 					) : (
 						<StatusButton
 							status={fetcher.state === 'submitting' ? 'pending' : 'idle'}

@@ -122,6 +122,13 @@ export async function signup({
 }) {
 	const hashedPassword = await getPasswordHash(password)
 
+	// Get first active theme
+	const firstTheme = await prisma.theme.findFirst({
+		where: { isActive: true },
+		orderBy: { createdAt: 'asc' },
+		select: { id: true },
+	})
+
 	const session = await prisma.session.create({
 		data: {
 			expirationDate: getSessionExpirationDate(),
@@ -137,7 +144,9 @@ export async function signup({
 						},
 					},
 					preferences: {
-						create: {},
+						create: {
+							preferredThemeId: firstTheme?.id
+						},
 					},
 				},
 			},
@@ -163,6 +172,13 @@ export async function signupWithConnection({
 	providerName: Connection['providerName']
 	imageUrl?: string
 }) {
+	// Get first active theme
+	const firstTheme = await prisma.theme.findFirst({
+		where: { isActive: true },
+		orderBy: { createdAt: 'asc' },
+		select: { id: true },
+	})
+
 	const session = await prisma.session.create({
 		data: {
 			expirationDate: getSessionExpirationDate(),
@@ -177,7 +193,9 @@ export async function signupWithConnection({
 						? { create: await downloadFile(imageUrl) }
 						: undefined,
 					preferences: {
-						create: {},
+						create: {
+							preferredThemeId: firstTheme?.id
+						},
 					},
 				},
 			},

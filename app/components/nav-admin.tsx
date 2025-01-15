@@ -34,6 +34,10 @@ export function NavAdmin({
 	}[]
 }) {
 	const { isMobile } = useSidebar()
+	const user = useUser()
+	const isAdmin = user.roles.some((role) => role.name === 'admin')
+
+	if (!isAdmin) return null
 
 	return (
 		<SidebarGroup className="group-data-[collapsible=icon]:hidden">
