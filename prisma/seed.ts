@@ -26,8 +26,27 @@ async function seed() {
 	const parkTheme = await prisma.theme.create({
 		data: {
 			name: 'Park',
-			description: 'Build your own peaceful park with trees, benches, and decorations.',
+			description: 'Create your own peaceful park with trees, benches, and fountains',
 			isActive: true,
+			backgrounds: {
+				create: [
+					{
+						name: 'Desert Landscape',
+						contentType: 'image/jpeg',
+						blob: await img({ filepath: './tests/fixtures/images/backgrounds/landscape-desert.jpg' }).then(img => img.blob),
+					},
+					{
+						name: 'Field Landscape',
+						contentType: 'image/jpeg',
+						blob: await img({ filepath: './tests/fixtures/images/backgrounds/landscape-field.jpg' }).then(img => img.blob),
+					},
+					{
+						name: 'Road Landscape',
+						contentType: 'image/jpeg',
+						blob: await img({ filepath: './tests/fixtures/images/backgrounds/landscape-road.jpg' }).then(img => img.blob),
+					},
+				],
+			},
 			themeCategories: {
 				create: [
 					{

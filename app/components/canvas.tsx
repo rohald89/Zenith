@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Canvas as FabricCanvas, Image as FabricImage } from 'fabric'
 import type { FabricImage as FabricImageType } from 'fabric'
 import { useNavigate } from 'react-router-dom'
+import { useLoaderData } from '@remix-run/react'
 
 type UserItem = {
 	id: string
@@ -16,12 +17,26 @@ type World = {
 	id: string
 }
 
-export function Canvas({ userItems }: { userItems: Array<UserItem> }) {
+type Background = {
+	id: string
+	name: string
+}
+
+export function Canvas({
+	userItems,
+	backgrounds,
+}: {
+	userItems: Array<UserItem>
+	backgrounds: Array<Background>
+}) {
 	const canvasRef = useRef<HTMLCanvasElement>(null)
 	const fabricRef = useRef<FabricCanvas | null>(null)
 	const [itemUsage, setItemUsage] = useState<Record<string, number>>({})
 	const [name, setName] = useState('')
 	const [description, setDescription] = useState('')
+	const [selectedBackground, setSelectedBackground] = useState<string | null>(
+		null,
+	)
 	const navigate = useNavigate()
 
 	useEffect(() => {
@@ -36,6 +51,55 @@ export function Canvas({ userItems }: { userItems: Array<UserItem> }) {
 			void fabricRef.current?.dispose()
 		}
 	}, [])
+
+	useEffect(() => {
+		if (!fabricRef.current || !selectedBackground) return
+
+		const img = document.createElement('img')
+		img.crossOrigin = 'anonymous'
+		img.src = `/resources/background-images/${selectedBackground}`
+		img.onload = () => {
+			const fabricImage = new FabricImage(img)
+			const canvas = fabricRef.current
+			if (!canvas) return
+
+			// Scale image to fit canvas while maintaining aspect ratio
+			const scaleX = canvas.getWidth() / img.width
+			const scaleY = canvas.getHeight() / img.height
+			const scale = Math.max(scaleX, scaleY)
+			fabricImage.scale(scale)
+
+			// Center the image
+			fabricImage.set({
+				left: (canvas.getWidth() - img.width * scale) / 2,
+				top: (canvas.getHeight() - img.height * scale) / 2,
+				selectable: false,
+				evented: false,
+			})
+
+			// Remove any existing background
+			const objects = canvas.getObjects()
+			if (
+				objects.length > 0 &&
+				objects[0] instanceof FabricImage &&
+				!objects[0].selectable
+			) {
+				canvas.remove(objects[0])
+			}
+
+			// Clear canvas and add background first
+			canvas.clear()
+			canvas.add(fabricImage)
+
+			// Re-add all other objects
+			objects.forEach((obj) => {
+				if (obj.selectable) {
+					canvas.add(obj)
+				}
+			})
+			canvas.renderAll()
+		}
+	}, [selectedBackground])
 
 	async function addImageToCanvas(imageUrl: string, itemId: string) {
 		if (!fabricRef.current) return
@@ -65,8 +129,6 @@ export function Canvas({ userItems }: { userItems: Array<UserItem> }) {
 		const canvasState = fabricRef.current.toJSON()
 		const canvasImage = canvasRef.current?.toDataURL('image/png')
 
-		console.log('Canvas Image:', canvasImage)
-
 		const response = await fetch('/resources/worlds', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
@@ -88,13 +150,26 @@ export function Canvas({ userItems }: { userItems: Array<UserItem> }) {
 		<div className="relative h-full w-full">
 			<canvas ref={canvasRef} />
 
-			<div className="absolute bottom-4 left-4">
+			<div className="absolute bottom-4 left-4 flex items-center gap-4">
+				<select
+					value={selectedBackground ?? ''}
+					onChange={(e) => setSelectedBackground(e.target.value || null)}
+					className="rounded border p-2"
+				>
+					<option value="">Select a background</option>
+					{backgrounds.map((bg) => (
+						<option key={bg.id} value={bg.id}>
+							{bg.name}
+						</option>
+					))}
+				</select>
+
 				<input
 					type="text"
 					placeholder="World name"
 					value={name}
 					onChange={(e) => setName(e.target.value)}
-					className="mr-2 rounded border p-2"
+					className="rounded border p-2"
 				/>
 				<button
 					onClick={saveWorld}

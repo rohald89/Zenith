@@ -6,6 +6,13 @@ import { invariantResponse } from '@epic-web/invariant'
 import { Field } from '#app/components/forms'
 import { SEOHandle } from '@nasa-gcn/remix-seo'
 import { type BreadcrumbHandle } from '#app/routes/settings+/profile.js'
+import { createId as cuid } from '@paralleldrive/cuid2'
+import {
+	unstable_createMemoryUploadHandler as createMemoryUploadHandler,
+	unstable_parseMultipartFormData as parseMultipartFormData,
+} from '@remix-run/node'
+
+const MAX_UPLOAD_SIZE = 1024 * 1024 * 3 // 3MB
 
 export const handle: BreadcrumbHandle & SEOHandle = {
 	breadcrumb: 'Edit',
@@ -25,6 +32,12 @@ export async function loader({ params }: ActionFunctionArgs) {
 							items: true,
 						},
 					},
+				},
+			},
+			backgrounds: {
+				select: {
+					id: true,
+					name: true,
 				},
 			},
 		},
@@ -57,6 +70,39 @@ export async function action({ request, params }: ActionFunctionArgs) {
 				themeId: params.themeId as string,
 			},
 		})
+		return json({ success: true })
+	}
+
+	if (intent === 'delete-background') {
+		const backgroundId = formData.get('backgroundId')
+		await prisma.background.delete({
+			where: { id: backgroundId as string },
+		})
+		return json({ success: true })
+	}
+
+	if (intent === 'add-background') {
+		const uploadHandler = createMemoryUploadHandler({
+			maxPartSize: MAX_UPLOAD_SIZE,
+		})
+		const backgroundFormData = await parseMultipartFormData(
+			request,
+			uploadHandler,
+		)
+		const backgroundName = backgroundFormData.get('backgroundName')
+		const backgroundFile = backgroundFormData.get('backgroundFile')
+
+		if (backgroundFile instanceof File) {
+			await prisma.background.create({
+				data: {
+					id: cuid(),
+					name: backgroundName as string,
+					contentType: backgroundFile.type,
+					blob: Buffer.from(await backgroundFile.arrayBuffer()),
+					themeId: params.themeId as string,
+				},
+			})
+		}
 		return json({ success: true })
 	}
 
@@ -165,6 +211,70 @@ export default function EditTheme() {
 					/>
 					<Button type="submit" name="intent" value="add-category">
 						Add Category
+					</Button>
+				</Form>
+			</div>
+
+			<div className="mt-8">
+				<h2 className="text-h2">Backgrounds</h2>
+				<div className="mt-4 grid gap-4">
+					{theme.backgrounds.map((background) => (
+						<div
+							key={background.id}
+							className="flex items-center justify-between rounded-lg border border-muted-foreground p-4"
+						>
+							<div className="flex items-center gap-4">
+								<img
+									src={`/resources/background-images/${background.id}`}
+									alt=""
+									className="h-32 w-48 rounded-lg object-cover"
+								/>
+								<p className="font-bold">{background.name}</p>
+							</div>
+							<Form method="POST">
+								<input
+									type="hidden"
+									name="backgroundId"
+									value={background.id}
+								/>
+								<Button
+									type="submit"
+									name="intent"
+									value="delete-background"
+									variant="destructive"
+									size="sm"
+								>
+									Delete
+								</Button>
+							</Form>
+						</div>
+					))}
+				</div>
+
+				<Form
+					method="POST"
+					className="mt-4 grid gap-4"
+					encType="multipart/form-data"
+				>
+					<Field
+						labelProps={{ children: 'Background Name' }}
+						inputProps={{
+							name: 'backgroundName',
+							placeholder: 'Enter background name',
+						}}
+					/>
+					<div className="flex flex-col gap-2">
+						<label htmlFor="backgroundFile">Background Image</label>
+						<input
+							id="backgroundFile"
+							name="backgroundFile"
+							type="file"
+							accept="image/*"
+							className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+						/>
+					</div>
+					<Button type="submit" name="intent" value="add-background">
+						Add Background
 					</Button>
 				</Form>
 			</div>

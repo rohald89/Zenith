@@ -196,11 +196,27 @@ model Theme {
     isActive Boolean @default(false)
 
     themeCategories ThemeCategory[]
+    backgrounds Background[]
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
     userPreferences UserPreferences[] @relation("UserPreferredTheme")
+}
+
+model Background {
+    id String @id @default(cuid())
+    name String
+    contentType String
+    blob Bytes
+
+    theme Theme @relation(fields: [themeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    themeId String
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([themeId])
 }
 
 model ThemeCategory {

@@ -56,7 +56,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
 						select: {
 							name: true,
 							theme: {
-								select: { name: true },
+								select: {
+									name: true,
+									backgrounds: {
+										select: {
+											id: true,
+											name: true,
+										},
+									},
+								},
 							},
 						},
 					},
@@ -65,11 +73,23 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		},
 	})
 
-	return json({ user, userItems })
+	const backgrounds = user.preferences?.preferredThemeId
+		? await prisma.background.findMany({
+				where: {
+					themeId: user.preferences.preferredThemeId,
+				},
+				select: {
+					id: true,
+					name: true,
+				},
+			})
+		: []
+
+	return json({ user, userItems, backgrounds })
 }
 
 export default function Dashboard() {
-	const { user, userItems } = useLoaderData<typeof loader>()
+	const { user, userItems, backgrounds } = useLoaderData<typeof loader>()
 	const displayName = user.name ?? user.username
 
 	return (
@@ -135,7 +155,7 @@ export default function Dashboard() {
 				</div>
 			</div>
 			<div className="mt-4 min-h-[50vh] flex-1 rounded-xl bg-muted/50 p-4 md:min-h-min">
-				<Canvas userItems={userItems} />
+				<Canvas userItems={userItems} backgrounds={backgrounds} />
 			</div>
 		</>
 	)
