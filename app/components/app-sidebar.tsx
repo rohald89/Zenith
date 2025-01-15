@@ -15,7 +15,6 @@ import {
 } from 'lucide-react'
 
 import { NavAccount } from '#app/components/nav-account'
-import { NavMain } from '#app/components/nav-main'
 import { NavUser } from '#app/components/nav-user'
 import { TeamSwitcher } from '#app/components/team-switcher'
 import {
@@ -181,7 +180,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 				<TeamSwitcher teams={data.teams} />
 			</SidebarHeader>
 			<SidebarContent>
-				{/* <NavMain items={data.navMain} /> */}
 				<NavAccount account={data.account} />
 				<NavAdmin items={data.navAdmin} />
 			</SidebarContent>

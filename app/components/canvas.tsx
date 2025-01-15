@@ -12,6 +12,10 @@ type UserItem = {
 	}
 }
 
+type World = {
+	id: string
+}
+
 export function Canvas({ userItems }: { userItems: Array<UserItem> }) {
 	const canvasRef = useRef<HTMLCanvasElement>(null)
 	const fabricRef = useRef<FabricCanvas | null>(null)
@@ -75,7 +79,7 @@ export function Canvas({ userItems }: { userItems: Array<UserItem> }) {
 		})
 
 		if (response.ok) {
-			const world = await response.json()
+			const world = (await response.json()) as World
 			navigate(`/worlds/${world.id}`)
 		}
 	}
