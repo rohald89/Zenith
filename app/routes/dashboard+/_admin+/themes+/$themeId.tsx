@@ -1,5 +1,5 @@
 import { json, type LoaderFunctionArgs } from '@remix-run/node'
-import { Link, useLoaderData } from '@remix-run/react'
+import { Form, Link, useLoaderData } from '@remix-run/react'
 import { Button } from '#app/components/ui/button.tsx'
 import { prisma } from '#app/utils/db.server.ts'
 import { requireUserWithRole } from '#app/utils/permissions.server.ts'
@@ -67,6 +67,7 @@ export default function ThemeDetails() {
 
 			<div className="flex flex-col gap-4">
 				<h3 className="text-h3">Categories</h3>
+
 				{theme.themeCategories.map((category) => (
 					<div key={category.id} className="flex flex-col gap-4">
 						<h4 className="text-h4">
@@ -93,9 +94,16 @@ export default function ThemeDetails() {
 										<p>{item.description}</p>
 										<p>Rarity: {item.rarity}</p>
 										<p>Drop Rate: {item.droprate}%</p>
-										<Button asChild>
-											<Link to={`items/${item.id}/edit`}>Edit Item</Link>
-										</Button>
+										<div className="flex gap-2">
+											<Button asChild>
+												<Link to={`items/${item.id}/edit`}>Edit Item</Link>
+											</Button>
+											<Form method="POST" action={`items/${item.id}/delete`}>
+												<Button type="submit" variant="destructive">
+													Delete Item
+												</Button>
+											</Form>
+										</div>
 									</div>
 								</div>
 							))}
